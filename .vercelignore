@@ -1,0 +1,5 @@
+.env*
+!.env.example
+.next/
+logs/
+data/raw/
