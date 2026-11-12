@@ -26,8 +26,10 @@ export function ShopChat() {
     result,
     error,
     loading,
+    hasPrior,
     submit,
     retry,
+    reset,
   } = useRecommendation();
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -125,14 +127,25 @@ export function ShopChat() {
             300 real Bewakoof pieces
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          aria-label="Close stylist"
-          className="h-8 rounded-[4px] px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          {hasPrior ? (
+            <button
+              type="button"
+              onClick={reset}
+              className="h-8 rounded-[4px] px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              New
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close stylist"
+            className="h-8 rounded-[4px] px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            Close
+          </button>
+        </div>
       </header>
 
       <div ref={bodyRef} className="flex-1 overflow-y-auto px-4 py-4">

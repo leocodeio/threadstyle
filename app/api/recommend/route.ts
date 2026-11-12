@@ -67,6 +67,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const result = await recommend(input.data.message, {
       sessionId: input.data.session_id,
+      prior: input.data.prior ?? null,
     });
 
     console.info(

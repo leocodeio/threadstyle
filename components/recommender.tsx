@@ -20,8 +20,10 @@ export function Recommender() {
     result,
     error,
     loading,
+    hasPrior,
     submit,
     retry,
+    reset,
   } = useRecommendation();
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -91,6 +93,17 @@ export function Recommender() {
         resultRef={resultRef}
         onRetry={retry}
       />
+      {hasPrior ? (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onClick={reset}
+            className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            New chat
+          </button>
+        </div>
+      ) : null}
       <AskComposer
         message={message}
         loading={loading}

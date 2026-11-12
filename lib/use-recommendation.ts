@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import type { RecommendResponse } from "./recommend-types";
+import type { PriorRequest, RecommendResponse } from "./recommend-types";
 
 const STATES = new Set([
   "recommend",
@@ -11,6 +11,8 @@ const STATES = new Set([
   "no_match",
   "error",
 ]);
+
+const PRIOR_KEY = "thread.prior.v1";
 
 function newSessionId(): string {
   if (
@@ -40,6 +42,63 @@ function isRecommendResponse(value: unknown): value is RecommendResponse {
   );
 }
 
+let memoryPrior: PriorRequest | null = null;
+let priorLoaded = false;
+const priorListeners = new Set<() => void>();
+
+function readPrior(): PriorRequest | null {
+  if (typeof window === "undefined") return null;
+  if (priorLoaded) return memoryPrior;
+  priorLoaded = true;
+
+  try {
+    const raw = window.sessionStorage.getItem(PRIOR_KEY);
+    if (!raw) return null;
+    const value: unknown = JSON.parse(raw);
+    if (
+      isRecord(value) &&
+      isRecord(value.request) &&
+      Array.isArray(value.missing)
+    ) {
+      memoryPrior = value as PriorRequest;
+    }
+  } catch {
+    memoryPrior = null;
+  }
+
+  return memoryPrior;
+}
+
+function writePrior(next: PriorRequest | null): void {
+  memoryPrior = next;
+  priorLoaded = true;
+
+  if (typeof window !== "undefined") {
+    try {
+      if (next === null) {
+        window.sessionStorage.removeItem(PRIOR_KEY);
+      } else {
+        window.sessionStorage.setItem(PRIOR_KEY, JSON.stringify(next));
+      }
+    } catch {
+      // Storage can be unavailable in private mode.
+    }
+  }
+
+  for (const listener of priorListeners) listener();
+}
+
+function subscribePrior(listener: () => void): () => void {
+  priorListeners.add(listener);
+  return () => {
+    priorListeners.delete(listener);
+  };
+}
+
+function serverPrior(): PriorRequest | null {
+  return null;
+}
+
 export type RecommendationController = {
   readonly message: string;
   readonly setMessage: (value: string) => void;
@@ -47,8 +106,10 @@ export type RecommendationController = {
   readonly result: RecommendResponse | null;
   readonly error: string | null;
   readonly loading: boolean;
+  readonly hasPrior: boolean;
   readonly submit: (raw: string) => Promise<void>;
   readonly retry: () => void;
+  readonly reset: () => void;
 };
 
 export function useRecommendation(): RecommendationController {
@@ -57,6 +118,11 @@ export function useRecommendation(): RecommendationController {
   const [result, setResult] = useState<RecommendResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const prior = useSyncExternalStore(
+    subscribePrior,
+    readPrior,
+    serverPrior,
+  );
 
   const sessionRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -93,7 +159,11 @@ export function useRecommendation(): RecommendationController {
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text, session_id: sessionId() }),
+        body: JSON.stringify({
+          message: text,
+          session_id: sessionId(),
+          prior: readPrior() ?? undefined,
+        }),
         signal: controller.signal,
       });
 
@@ -113,6 +183,7 @@ export function useRecommendation(): RecommendationController {
         return;
       }
 
+      writePrior(payload.meta?.prior ?? null);
       setResult(payload);
       setMessage("");
     } catch (caught) {
@@ -128,6 +199,17 @@ export function useRecommendation(): RecommendationController {
     void submit(lastAsked);
   }
 
+  function reset() {
+    abortRef.current?.abort();
+    writePrior(null);
+    setResult(null);
+    setLastAsked("");
+    setError(null);
+    setMessage("");
+    setLoading(false);
+    inFlightRef.current = false;
+  }
+
   return {
     message,
     setMessage,
@@ -135,7 +217,9 @@ export function useRecommendation(): RecommendationController {
     result,
     error,
     loading,
+    hasPrior: prior !== null,
     submit,
     retry,
+    reset,
   };
 }

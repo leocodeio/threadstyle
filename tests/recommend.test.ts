@@ -13,6 +13,7 @@ describe("recommend", () => {
             budget_max_inr: 700,
             colours_include: ["black"],
             pattern_include: ["solid"],
+            wants_count: 1,
           },
         }),
         {
@@ -20,7 +21,7 @@ describe("recommend", () => {
           items: [
             {
               item_id: "BW-596004",
-              why: "Plain black and solid, with an oversized fit for class.",
+              why: "Plain black and solid, with an oversized fit.",
               trade_off: "Oversized, so check the size chart.",
             },
           ],
@@ -32,6 +33,57 @@ describe("recommend", () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.item.item_id).toBe("BW-596004");
     expect(result.items[0]?.item.price_inr).toBeLessThanOrEqual(700);
+  });
+
+  it("drops a reason that invents an occasion", async () => {
+    const result = await recommend("plain black tee under 700", {
+      chat: chatSequence([
+        makeParser({
+          request: { categories: ["tee"], budget_max_inr: 700 },
+        }),
+        {
+          message: "A tee for hostel life.",
+          items: [
+            {
+              item_id: "BW-596004",
+              why: "Easy for hostel life and class.",
+              trade_off: "Oversized.",
+            },
+          ],
+        },
+      ]),
+    });
+
+    expect(result.state).toBe("recommend");
+    expect(
+      result.items.every(
+        (entry) => !entry.why.toLowerCase().includes("hostel"),
+      ),
+    ).toBe(true);
+  });
+
+  it("rewrites a headline that names the wrong category", async () => {
+    const result = await recommend("plain black tee under 700", {
+      chat: chatSequence([
+        makeParser({
+          request: { categories: ["tee"], budget_max_inr: 700 },
+        }),
+        {
+          message: "Two shirts that fit the budget.",
+          items: [
+            {
+              item_id: "BW-596004",
+              why: "Plain black and solid.",
+              trade_off: "Oversized.",
+            },
+          ],
+        },
+      ]),
+    });
+
+    expect(result.state).toBe("recommend");
+    expect(result.message.toLowerCase()).toContain("t-shirts");
+    expect(result.message.toLowerCase()).not.toContain("two shirts");
   });
 
   it("drops invented ids and falls back to real candidates", async () => {

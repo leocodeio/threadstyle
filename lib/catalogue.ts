@@ -37,6 +37,17 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   shorts: "Shorts",
 };
 
+export const CATEGORY_SINGULAR: Record<Category, string> = {
+  tee: "t-shirt",
+  shirt: "shirt",
+  hoodie: "hoodie",
+  sweatshirt: "sweatshirt",
+  jacket: "jacket",
+  joggers: "pair of joggers",
+  jeans: "pair of jeans",
+  shorts: "pair of shorts",
+};
+
 const catalogueItemSchema = z.object({
   item_id: z.string().min(1),
   brand: z.string().min(1),

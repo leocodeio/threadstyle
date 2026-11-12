@@ -1,4 +1,5 @@
 import { requestJson, type ChatFn } from "./llm";
+import { MAX_OUTPUT_TOKENS, PARSER_TIMEOUT_MS } from "./config";
 import { parserUser, PARSER_SYSTEM } from "../prompts/parser";
 import {
   parsedRequestSchema,
@@ -42,20 +43,10 @@ function normalizeParsed(parsed: ParsedRequest): ParsedRequest {
     };
   }
 
-  if (parsed.references_prior && request.budget_max_inr === null) {
-    return {
-      ...parsed,
-      intent: "clarify",
-      request,
-      missing: ["category", "budget"],
-      decline_reason: null,
-    };
-  }
+  const missing = new Set<MissingField>();
 
-  const missing = new Set<MissingField>(parsed.missing);
-
-  if (request.budget_max_inr !== null) {
-    missing.delete("budget");
+  if (request.budget_max_inr === null) {
+    missing.add("budget");
   }
 
   const hasCategorySignal =
@@ -66,37 +57,28 @@ function normalizeParsed(parsed: ParsedRequest): ParsedRequest {
     request.colours_include.length > 0 ||
     request.weather !== null;
 
-  if (hasCategorySignal) {
-    missing.delete("category");
-  }
-
-  if (parsed.intent === "recommend" && missing.size > 0) {
-    return {
-      ...parsed,
-      intent: "clarify",
-      request,
-      missing: [...missing],
-      decline_reason: null,
-    };
-  }
-
-  if (parsed.intent === "clarify" && missing.size === 0) {
+  if (!hasCategorySignal) {
     missing.add("category");
-    missing.add("budget");
   }
 
   return {
     ...parsed,
+    intent: missing.size > 0 ? "clarify" : "recommend",
     request,
     missing: [...missing],
     decline_reason: null,
   };
 }
 
+export type ParseOptions = {
+  readonly timeoutMs?: number;
+};
+
 export async function parseRequest(
   message: string,
   sessionId: string,
   chat: ChatFn,
+  options: ParseOptions = {},
 ): Promise<ParsedRequest> {
   const result = await requestJson(
     {
@@ -105,9 +87,10 @@ export async function parseRequest(
       user: parserUser(message),
       schema: parsedRequestSchema,
       sessionId,
-      maxTokens: 1_500,
-      timeoutMs: 20_000,
+      maxTokens: MAX_OUTPUT_TOKENS,
+      timeoutMs: options.timeoutMs ?? PARSER_TIMEOUT_MS,
       temperature: 0.1,
+      reasoningEffort: "none",
     },
     chat,
   );

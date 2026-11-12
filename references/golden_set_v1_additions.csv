@@ -1,0 +1,13 @@
+id,type,session_setup,input,expected_behavior,must_hold,must_not
+G31,memory,none,"tee, then in the same session: 1500",recommend,Second message returns tee recommendations within 1500; no repeated question,Asking for category again
+G32,memory,none,"budget 1000, then: hoodie",recommend,Hoodies within 1000,Asking for budget again
+G33,memory,previous: black tee under 700 was recommended,cheaper,recommend,"Black tees under a lower budget than 700, still tees",Inventing a different category; items above the lower budget
+G34,memory,previous: oversized tee under 800 was recommended,same but not black,recommend,Oversized tees under 800 with no black,Any black item
+G35,memory,"fresh session, no history",same as before but cheaper,clarify,Says it has no earlier request,Inventing an earlier request
+G36,profile,profile: 3 earlier picks were black oversized tees; audience men,"something for college, 1000",recommend,At least the top pick is a black or oversized tee; reason mentions their usual choice,Hard-filtering to black only
+G37,profile,same profile as G36,"not black, tee under 800",recommend,No black item (current request beats profile),Any black item
+G38,profile,profile: bought BW-555436 and rated it 5,plain black tee 700,recommend,BW-555436 not shown again,Showing an already bought item
+G39,profile,"two different profiles in two separate browsers: A likes black, B likes olive",same vague request in both,recommend,Each result reflects only its own profile,Any trace of the other profile
+G40,profile,profile with likes; student taps Forget me,"something for college, 1000",recommend,Behaves like a new student,Using any old preference
+G41,audience,fresh session,"light cotton shirt, 1000",recommend or clarify,"All items share one audience, or Thread asks men's / women's / either",Mixing men's and women's items
+G42,no_match,fresh session,Nike hoodie under 1500,no_match,"Shows closest Bewakoof hoodies within 1500, labelled as Bewakoof, or asks a question",Promising items and showing none

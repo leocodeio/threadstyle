@@ -15,23 +15,23 @@ export const parsedRequestSchema = z.object({
   intent: z.enum(["recommend", "clarify", "decline"]),
   language: z.enum(["en", "hinglish"]),
   references_prior: z.boolean(),
-  missing: z.array(missingFieldSchema),
+  missing: z.array(missingFieldSchema).max(2),
   decline_reason: z.enum(["body", "size", "order", "rules"]).nullable(),
   request: z.object({
-    categories: z.array(z.enum(CATEGORIES)),
+    categories: z.array(z.enum(CATEGORIES)).max(8),
     budget_max_inr: z.number().int().positive().nullable(),
     audience: z.enum(["men", "women"]).nullable(),
-    colours_include: z.array(z.string()),
-    colours_exclude: z.array(z.string()),
+    colours_include: z.array(z.string()).max(8),
+    colours_exclude: z.array(z.string()).max(8),
     colour_tone: z.enum(["dark", "light"]).nullable(),
-    fabric_include: z.array(z.string()),
+    fabric_include: z.array(z.string()).max(8),
     brand_other: z.string().nullable(),
     weather: z.enum(["hot_humid", "mild", "cold"]).nullable(),
     formality_min: z.number().int().min(1).max(3).nullable(),
     upkeep: z.literal("easy").nullable(),
-    fit_include: z.array(z.string()),
-    pattern_include: z.array(z.string()),
-    use_tags: z.array(z.enum(USE_TAGS)),
+    fit_include: z.array(z.string()).max(8),
+    pattern_include: z.array(z.string()).max(8),
+    use_tags: z.array(z.enum(USE_TAGS)).max(8),
     sleeve: z.string().nullable(),
     sort: z.enum(["cheapest", "best_rated", "balanced"]),
     wants_count: z.number().int().min(1).max(3).nullable(),
@@ -43,6 +43,14 @@ export type ParsedNeed = ParsedRequest["request"];
 export type MissingField = z.infer<typeof missingFieldSchema>;
 export type DeclineReason = NonNullable<ParsedRequest["decline_reason"]>;
 export type Language = ParsedRequest["language"];
+
+export const priorRequestSchema = z.object({
+  request: parsedRequestSchema.shape.request,
+  missing: z.array(missingFieldSchema).max(2),
+  last_message: z.string().trim().max(MAX_REQUEST_CHARS).optional(),
+});
+
+export type PriorRequest = z.infer<typeof priorRequestSchema>;
 
 export const pickerOutputSchema = z.object({
   message: z.string().min(1).max(240),
@@ -68,6 +76,7 @@ export const recommendRequestSchema = z.object({
     .max(120)
     .regex(/^[a-zA-Z0-9_-]+$/)
     .optional(),
+  prior: priorRequestSchema.optional(),
 });
 
 export type RecommendRequest = z.infer<typeof recommendRequestSchema>;
@@ -93,6 +102,7 @@ export type RecommendMeta = {
   readonly filtered: number;
   readonly relaxed: readonly string[];
   readonly latency_ms: number;
+  readonly prior: PriorRequest | null;
 };
 
 export type RecommendResponse = {

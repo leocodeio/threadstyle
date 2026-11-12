@@ -25,6 +25,8 @@ export type ChatMessage = {
   readonly content: string;
 };
 
+export type ReasoningEffort = "none" | "low" | "high" | "max";
+
 export type ChatCompletionRequest = {
   readonly agent: AgentName;
   readonly messages: readonly ChatMessage[];
@@ -32,6 +34,7 @@ export type ChatCompletionRequest = {
   readonly timeoutMs: number;
   readonly maxTokens: number;
   readonly temperature: number;
+  readonly reasoningEffort?: ReasoningEffort;
 };
 
 export type ChatCompletionResult = {
@@ -95,7 +98,7 @@ async function fetchOnce(request: ChatCompletionRequest): Promise<Response> {
         messages: request.messages,
         temperature: request.temperature,
         max_tokens: request.maxTokens,
-        reasoning_effort: "low",
+        reasoning_effort: request.reasoningEffort ?? "low",
         response_format: { type: "json_object" },
       }),
       signal: AbortSignal.timeout(request.timeoutMs),

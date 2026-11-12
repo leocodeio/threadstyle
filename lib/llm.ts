@@ -7,6 +7,7 @@ import {
   type ChatCompletionResult,
   type ChatFn,
   type ChatUsage,
+  type ReasoningEffort,
 } from "./llm-transport";
 
 export {
@@ -31,6 +32,7 @@ export type JsonRequest<T> = {
   readonly temperature?: number;
   readonly maxTokens?: number;
   readonly timeoutMs?: number;
+  readonly reasoningEffort?: ReasoningEffort;
 };
 
 export type JsonResult<T> = {
@@ -102,6 +104,7 @@ async function repairJson<T>(
     timeoutMs: request.timeoutMs ?? 15_000,
     maxTokens: request.maxTokens ?? 1_500,
     temperature: 0,
+    reasoningEffort: "none",
   });
 
   const parsed = parseJsonLoose(repaired.text);
@@ -138,6 +141,7 @@ export async function requestJson<T>(
     timeoutMs: request.timeoutMs ?? 15_000,
     maxTokens: request.maxTokens ?? 1_500,
     temperature: request.temperature ?? 0.1,
+    reasoningEffort: request.reasoningEffort,
   });
 
   const parsed = parseJsonLoose(first.text);

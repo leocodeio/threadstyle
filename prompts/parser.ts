@@ -57,7 +57,7 @@ Rules:
 - sort: "cheapest" for cheap/cheapest, "best_rated" for best rated, otherwise "balanced".
 - wants_count: 3 for "3 outfits"/"three looks", 1 for "one", otherwise null.
 - language: "hinglish" for Roman Hindi/Hinglish, otherwise "en".
-- references_prior: true for "same as before", "cheaper", "that one", "the previous one".
+- references_prior: true for "same as before", "same but ...", "cheaper", "that one", "the previous one". Fill only the fields the student stated; leave the rest empty or null. A bare budget after Thread asked for one is a short reply, but it is not a reference to an earlier request by itself.
 - For clarify or decline: set all request fields to empty arrays, nulls, or "balanced", set missing to [] for decline, and set decline_reason only for decline.
 
 Examples:
