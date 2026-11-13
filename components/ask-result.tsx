@@ -1,15 +1,8 @@
 import type { RefObject } from "react";
 
-import type { RecommendResponse, RecommendState } from "@/lib/recommend-types";
-import { RecommendationCard } from "./recommendation-card";
+import type { RecommendResponse } from "@/lib/recommend-types";
+import { AskTurn } from "./ask-turn";
 import { StateBlock } from "./state-block";
-
-const STATE_LABELS: Record<Exclude<RecommendState, "recommend">, string> = {
-  clarify: "Need one thing",
-  decline: "Can't help",
-  no_match: "Nothing in budget",
-  error: "Something broke",
-};
 
 function TypingDots() {
   return (
@@ -79,49 +72,12 @@ export function AskResult({
       ) : null}
 
       {!loading && !error && result ? (
-        <div>
-          {showRequest ? (
-            <>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                You asked
-              </p>
-              <p className="mt-1 border-l border-border pl-3 text-[13px] leading-5 text-muted-foreground">
-                {lastAsked}
-              </p>
-            </>
-          ) : null}
-
-          <div className={compact ? "mt-0" : "mt-5"}>
-            {result.state === "recommend" ? (
-              <>
-                <p className="text-[15px] leading-6">{result.message}</p>
-                <div
-                  className={
-                    compact
-                      ? "mt-3 flex flex-col gap-3"
-                      : "mt-4 flex flex-col gap-4"
-                  }
-                >
-                  {result.items.map((entry, index) => (
-                    <RecommendationCard
-                      key={entry.item.item_id}
-                      item={entry.item}
-                      why={entry.why}
-                      tradeOff={entry.trade_off}
-                      topPick={index === 0}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <StateBlock
-                label={STATE_LABELS[result.state]}
-                message={result.message}
-                tone={result.state === "decline" ? "brick" : "default"}
-              />
-            )}
-          </div>
-        </div>
+        <AskTurn
+          asked={lastAsked}
+          result={result}
+          compact={compact}
+          showRequest={showRequest}
+        />
       ) : null}
     </div>
   );

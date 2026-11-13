@@ -10,7 +10,9 @@ import { useEffect, useRef } from "react";
 import { useRecommendation } from "@/lib/use-recommendation";
 import { AskComposer } from "@/components/ask-composer";
 import { AskHero } from "@/components/ask-hero";
+import { AskHistory } from "@/components/ask-history";
 import { AskResult } from "@/components/ask-result";
+import { pastTurns } from "@/lib/turns";
 
 export function Recommender() {
   const {
@@ -20,6 +22,7 @@ export function Recommender() {
     result,
     error,
     loading,
+    turns,
     hasPrior,
     submit,
     retry,
@@ -77,14 +80,18 @@ export function Recommender() {
     });
   }
 
-  const composerPinned = loading || error !== null || result !== null;
+  const composerPinned =
+    loading || error !== null || result !== null || turns.length > 0;
+  const showingLatest = !loading && error === null && result !== null;
+  const history = pastTurns(turns, showingLatest);
 
   return (
     <main className="mx-auto flex w-full max-w-[768px] flex-1 flex-col px-6">
       <AskHero
-        showExamples={!loading && !result}
+        showExamples={!loading && !result && turns.length === 0}
         onExample={fillExample}
       />
+      <AskHistory turns={history} />
       <AskResult
         loading={loading}
         error={error}
