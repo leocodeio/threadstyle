@@ -36,6 +36,23 @@ function unique<T extends string>(values: readonly T[]): T[] {
   return [...new Set(values)];
 }
 
+function hasConstraint(need: ParsedNeed): boolean {
+  return (
+    need.colours_include.length > 0 ||
+    need.colours_exclude.length > 0 ||
+    need.pattern_include.length > 0 ||
+    need.fit_include.length > 0 ||
+    need.fabric_include.length > 0 ||
+    need.use_tags.length > 0 ||
+    need.weather !== null ||
+    need.formality_min !== null ||
+    need.upkeep !== null ||
+    need.sleeve !== null ||
+    need.colour_tone !== null ||
+    need.sort !== "balanced"
+  );
+}
+
 export function mergePrior(
   parsed: ParsedRequest,
   prior: PriorRequest | null,
@@ -60,11 +77,20 @@ export function mergePrior(
     newNeed.categories.length === 0 &&
     newNeed.budget_max_inr === null &&
     missingFor(oldNeed).length === 0;
+  // A bare refinement ("plain colours only", "not black", "something warmer")
+  // names neither a budget nor a category. It can only mean "same request, but
+  // with this", so keep everything already known instead of asking again.
+  const refinesPrior =
+    parsed.intent !== "decline" &&
+    newNeed.budget_max_inr === null &&
+    newNeed.categories.length === 0 &&
+    hasConstraint(newNeed);
   const shouldMerge =
     parsed.references_prior ||
     answersCategory ||
     answersBudget ||
-    switchesAudience;
+    switchesAudience ||
+    refinesPrior;
 
   if (!shouldMerge) {
     return { parsed, used_prior: false };
