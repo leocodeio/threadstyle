@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type { PriorRequest, RecommendResponse } from "./recommend-types";
+import { appendTurn, parseTurns, type Turn } from "./turns";
 
 const STATES = new Set([
   "recommend",
@@ -13,6 +14,7 @@ const STATES = new Set([
 ]);
 
 const PRIOR_KEY = "thread.prior.v1";
+const TURNS_KEY = "thread.turns.v1";
 
 function newSessionId(): string {
   if (
@@ -99,6 +101,58 @@ function serverPrior(): PriorRequest | null {
   return null;
 }
 
+const NO_TURNS: Turn[] = [];
+let memoryTurns: Turn[] = NO_TURNS;
+let turnsLoaded = false;
+const turnsListeners = new Set<() => void>();
+
+// The chat history lives in sessionStorage so a refresh keeps it, the same way
+// the saved request above survives one.
+function readTurns(): Turn[] {
+  if (typeof window === "undefined") return NO_TURNS;
+  if (turnsLoaded) return memoryTurns;
+  turnsLoaded = true;
+
+  try {
+    const saved = parseTurns(window.sessionStorage.getItem(TURNS_KEY));
+    if (saved.length > 0) memoryTurns = saved;
+  } catch {
+    memoryTurns = NO_TURNS;
+  }
+
+  return memoryTurns;
+}
+
+function writeTurns(next: Turn[]): void {
+  memoryTurns = next.length === 0 ? NO_TURNS : next;
+  turnsLoaded = true;
+
+  if (typeof window !== "undefined") {
+    try {
+      if (next.length === 0) {
+        window.sessionStorage.removeItem(TURNS_KEY);
+      } else {
+        window.sessionStorage.setItem(TURNS_KEY, JSON.stringify(next));
+      }
+    } catch {
+      // Storage can be full or unavailable; the chat still works in memory.
+    }
+  }
+
+  for (const listener of turnsListeners) listener();
+}
+
+function subscribeTurns(listener: () => void): () => void {
+  turnsListeners.add(listener);
+  return () => {
+    turnsListeners.delete(listener);
+  };
+}
+
+function serverTurns(): Turn[] {
+  return NO_TURNS;
+}
+
 export type RecommendationController = {
   readonly message: string;
   readonly setMessage: (value: string) => void;
@@ -106,6 +160,7 @@ export type RecommendationController = {
   readonly result: RecommendResponse | null;
   readonly error: string | null;
   readonly loading: boolean;
+  readonly turns: readonly Turn[];
   readonly hasPrior: boolean;
   readonly submit: (raw: string) => Promise<void>;
   readonly retry: () => void;
@@ -118,6 +173,11 @@ export function useRecommendation(): RecommendationController {
   const [result, setResult] = useState<RecommendResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const turns = useSyncExternalStore(
+    subscribeTurns,
+    readTurns,
+    serverTurns,
+  );
   const prior = useSyncExternalStore(
     subscribePrior,
     readPrior,
@@ -184,6 +244,14 @@ export function useRecommendation(): RecommendationController {
       }
 
       writePrior(payload.meta?.prior ?? null);
+      const saved = readTurns();
+      writeTurns(
+        appendTurn(saved, {
+          id: `${Date.now().toString(36)}_${saved.length}`,
+          asked: text,
+          result: payload,
+        }),
+      );
       setResult(payload);
       setMessage("");
     } catch (caught) {
@@ -202,6 +270,7 @@ export function useRecommendation(): RecommendationController {
   function reset() {
     abortRef.current?.abort();
     writePrior(null);
+    writeTurns([]);
     setResult(null);
     setLastAsked("");
     setError(null);
@@ -217,6 +286,7 @@ export function useRecommendation(): RecommendationController {
     result,
     error,
     loading,
+    turns,
     hasPrior: prior !== null,
     submit,
     retry,

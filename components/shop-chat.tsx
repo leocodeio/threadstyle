@@ -7,8 +7,10 @@ import type {
 } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { pastTurns } from "@/lib/turns";
 import { useRecommendation } from "@/lib/use-recommendation";
 import { AskComposer } from "./ask-composer";
+import { AskHistory } from "./ask-history";
 import { AskResult } from "./ask-result";
 
 const EXAMPLES = [
@@ -26,6 +28,7 @@ export function ShopChat() {
     result,
     error,
     loading,
+    turns,
     hasPrior,
     submit,
     retry,
@@ -48,8 +51,10 @@ export function ShopChat() {
       const reduce = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
       ).matches;
+      // Bring the newest question and its answer into view, with the earlier
+      // turns scrolled out above it.
       bodyRef.current?.scrollTo({
-        top: 0,
+        top: bodyRef.current.scrollHeight,
         behavior: reduce ? "auto" : "smooth",
       });
     });
@@ -96,7 +101,11 @@ export function ShopChat() {
     });
   }
 
-  const hasContent = Boolean(lastAsked || result || error || loading);
+  const hasContent = Boolean(
+    lastAsked || result || error || loading || turns.length > 0,
+  );
+  const showingLatest = !loading && error === null && result !== null;
+  const history = pastTurns(turns, showingLatest);
 
   if (!open) {
     return (
@@ -151,6 +160,7 @@ export function ShopChat() {
       <div ref={bodyRef} className="flex-1 overflow-y-auto px-4 py-4">
         {hasContent ? (
           <>
+            <AskHistory compact turns={history} />
             {lastAsked ? (
               <div className="ml-auto max-w-[85%] rounded-[4px] bg-secondary px-3 py-2 text-[13px] leading-5 text-secondary-foreground">
                 {lastAsked}
