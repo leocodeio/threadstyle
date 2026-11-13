@@ -45,8 +45,16 @@ export type PickOptions = {
   readonly deadline?: number;
 };
 
+// Catalogue tags use snake_case; never show them to a student as written.
+function humanize(value: string): string {
+  return value
+    .replace(/hot_humid/gi, "hot and humid")
+    .replace(/self_design/gi, "self-design")
+    .replace(/\b([a-z]+)_([a-z]+)\b/gi, "$1 $2");
+}
+
 function trimWords(value: string, max: number): string {
-  const clean = value.trim().replace(/\s+/g, " ");
+  const clean = humanize(value).trim().replace(/\s+/g, " ");
   const words = clean.split(" ");
   if (words.length <= max) return clean;
   return `${words.slice(0, max).join(" ").replace(/[,;:]$/, "")}…`;
@@ -73,25 +81,39 @@ function fallbackWhy(item: CatalogueItem, parsed: ParsedRequest): string {
   const label = CATEGORY_SINGULAR[item.category];
   const price = formatINR(item.price_inr);
   const budget = parsed.request.budget_max_inr;
-  const details = [
-    ...parsed.request.fabric_include,
-    ...(parsed.request.pattern_include.includes("solid") ? ["plain"] : []),
-    ...(parsed.request.weather === "hot_humid" ? ["hot weather"] : []),
-    ...(parsed.request.weather === "cold" ? ["cold weather"] : []),
-    ...parsed.request.use_tags.slice(0, 1),
-  ];
+  const fit = item.fit.toLowerCase();
+  const colour = item.colour.toLowerCase();
+  const fabric = item.fabric.trim();
+  const climate =
+    parsed.request.weather !== null && item.weather === parsed.request.weather
+      ? parsed.request.weather === "hot_humid"
+        ? "hot, humid weather"
+        : parsed.request.weather === "cold"
+          ? "cold weather"
+          : null
+      : null;
+  const occasion = parsed.request.use_tags[0] ?? null;
 
   if (parsed.language === "hinglish") {
-    const suffix = details.length > 0 ? `, ${details.join(", ")}` : "";
+    const parts = [`${colour} ${label}, ${price} mein`];
+    if (fabric !== "") parts.push(fabric);
+    if (climate !== null) parts.push(`${climate} ke liye sahi`);
+    if (occasion !== null) parts.push(`${occasion} ke liye`);
+    const head = parts.join(", ");
     return budget === null
-      ? `${item.colour.toLowerCase()} ${label}, ${price} mein${suffix}.`
-      : `${item.colour.toLowerCase()} ${label}, ${price} mein — ${formatINR(budget)} ke andar${suffix}.`;
+      ? `${head}.`
+      : `${head} — ${formatINR(budget)} ke andar.`;
   }
 
-  const suffix = details.length > 0 ? `, good for ${details.join(", ")}` : "";
+  const parts = [`${fit} ${colour} ${label} at ${price}`];
+  if (fabric !== "") parts.push(`in ${fabric}`);
+  let head = parts.join(" ");
+  if (climate !== null) head += `, suited to ${climate}`;
+  if (occasion !== null) head += `, for ${occasion}`;
+  head = head.charAt(0).toUpperCase() + head.slice(1);
   return budget === null
-    ? `${item.fit.toLowerCase()} ${item.colour.toLowerCase()} ${label} at ${price}${suffix}.`
-    : `${item.fit.toLowerCase()} ${item.colour.toLowerCase()} ${label} at ${price}${suffix} — inside your ${formatINR(budget)} budget.`;
+    ? `${head}.`
+    : `${head} — inside your ${formatINR(budget)} budget.`;
 }
 
 function fallbackTradeOff(item: CatalogueItem, parsed: ParsedRequest): string {
@@ -378,18 +400,32 @@ export async function pickItems(
   }
 
   const minimum = input.parsed.request.wants_count === 1 ? 1 : 2;
-  if (
-    selected.length === 0 ||
-    (selected.length < minimum && input.candidates.length >= minimum)
-  ) {
+  if (selected.length === 0) {
+    console.warn(
+      JSON.stringify({ event: "picker_partial_fallback", kept: 0, minimum }),
+    );
+    return fallback(input, audience);
+  }
+
+  if (selected.length < minimum && input.candidates.length >= minimum) {
+    // Keep the grounded picks the model wrote and top up from the filter,
+    // instead of throwing every model-written reason away.
     console.warn(
       JSON.stringify({
-        event: "picker_partial_fallback",
+        event: "picker_top_up",
         kept: selected.length,
         minimum,
       }),
     );
-    return fallback(input, audience);
+    const taken = new Set(selected.map((entry) => entry.item.item_id));
+    const extra = fallback(input, audience).items.filter(
+      (entry) => !taken.has(entry.item.item_id),
+    );
+    const topped = [...selected, ...extra].slice(0, MAX_ITEMS);
+    return {
+      message: headlineFor(topped, input.parsed),
+      items: topped,
+    };
   }
 
   const rewriteHeadline = dropped.length > 0 || audienceDropped;

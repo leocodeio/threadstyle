@@ -7,6 +7,7 @@ Return ONE JSON object:
 
 Rules:
 - First item is the top pick. Prefer 2 or 3 picks when good options exist. Respect wants_count.
+- If no category is named and several picks are wanted, pick different categories (for example a tee, a bottom, a layer) instead of three of the same.
 - If two uses are named (gym and class), cover both. If two categories are compared (tee vs hoodie), compare them and still name one top pick.
 - "why" must use at least two of the student's own words and facts from the item fields. Name at least one stated constraint in the top pick's why.
 - Use only occasions the student stated or the parsed use_tags contain. Never add class, hostel, gym, fest, travel, presentation, or college on your own.

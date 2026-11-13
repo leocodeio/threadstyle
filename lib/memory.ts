@@ -5,7 +5,7 @@ import type {
   PriorRequest,
 } from "./recommend-types";
 
-function missingFor(request: ParsedNeed): MissingField[] {
+export function missingFor(request: ParsedNeed): MissingField[] {
   const missing: MissingField[] = [];
   if (request.budget_max_inr === null) missing.push("budget");
 
@@ -19,6 +19,13 @@ function missingFor(request: ParsedNeed): MissingField[] {
 
   if (!hasCategorySignal) missing.push("category");
   return missing;
+}
+
+const AFFIRMATION =
+  /^\s*(yes|yeah|yep|yup|ya|ok|okay|sure|please|haan|haa|han|ha|ji|dikhao|show me|show)\b[\s.!]*$/i;
+
+export function isAffirmation(message: string): boolean {
+  return AFFIRMATION.test(message);
 }
 
 function lowerBudget(value: number): number {
@@ -47,8 +54,17 @@ export function mergePrior(
     prior.missing.includes("category") && newNeed.categories.length > 0;
   const answersBudget =
     prior.missing.includes("budget") && newNeed.budget_max_inr !== null;
+  // "women's" or "men's" on its own switches the audience of the last request.
+  const switchesAudience =
+    newNeed.audience !== null &&
+    newNeed.categories.length === 0 &&
+    newNeed.budget_max_inr === null &&
+    missingFor(oldNeed).length === 0;
   const shouldMerge =
-    parsed.references_prior || answersCategory || answersBudget;
+    parsed.references_prior ||
+    answersCategory ||
+    answersBudget ||
+    switchesAudience;
 
   if (!shouldMerge) {
     return { parsed, used_prior: false };

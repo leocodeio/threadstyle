@@ -56,6 +56,10 @@ export function filterCatalogue(
       ? Math.min(...base.map((item) => item.price_inr))
       : null;
 
+  // An open request ("simple and comfortable") with no weather or category
+  // should not lead with warm-weather pieces such as hoodies and puffers.
+  const skipCold = need.weather === null && need.categories.length === 0;
+
   if (base.length === 0) {
     return {
       candidates: [],
@@ -99,10 +103,14 @@ export function filterCatalogue(
   }
 
   const budget = need.budget_max_inr;
-  const budgetBase =
+  const withinBudget =
     budget !== null
       ? fabricBase.filter((item) => item.price_inr <= budget)
       : fabricBase;
+  const notCold = skipCold
+    ? withinBudget.filter((item) => item.weather !== "cold")
+    : withinBudget;
+  const budgetBase = notCold.length >= 3 ? notCold : withinBudget;
 
   if (budgetBase.length === 0) {
     return {
