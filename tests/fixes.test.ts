@@ -280,3 +280,50 @@ describe("open requests", () => {
     ).toBeLessThanOrEqual(2);
   });
 });
+
+describe("refinements keep what is already known", () => {
+  it("'plain colours only' after a cold-weather, under-1800 request keeps both", async () => {
+    const first = await recommend("cold weather, under 1800", {
+      chat: chatSequence([
+        makeParser({ request: { weather: "cold", budget_max_inr: 1800 } }),
+        pick("BW-596572", "A warm hoodie inside the budget.", "Regular fit."),
+      ]),
+    });
+    expect(first.state).toBe("recommend");
+
+    const second = await recommend("I need plain colours only.", {
+      prior: first.meta.prior,
+      chat: chatSequence([
+        makeParser({
+          intent: "clarify",
+          missing: ["budget"],
+          request: { pattern_include: ["solid"], budget_max_inr: null },
+        }),
+        pick("BW-596572", "A plain warm hoodie inside the budget.", "Regular fit."),
+      ]),
+    });
+
+    expect(second.state).toBe("recommend");
+    expect(second.items.every((e) => e.item.price_inr <= 1800)).toBe(true);
+    expect(second.meta.prior?.request.budget_max_inr).toBe(1800);
+    expect(second.meta.prior?.request.weather).toBe("cold");
+  });
+
+  it("a new request with its own budget is not merged", async () => {
+    const first = await recommend("cold weather, under 1800", {
+      chat: chatSequence([
+        makeParser({ request: { weather: "cold", budget_max_inr: 1800 } }),
+        pick("BW-596572", "Warm.", "Regular fit."),
+      ]),
+    });
+    const second = await recommend("tee under 500", {
+      prior: first.meta.prior,
+      chat: chatSequence([
+        makeParser({ request: { categories: ["tee"], budget_max_inr: 500 } }),
+        pick("BW-555436", "A tee inside the budget.", "Regular fit."),
+      ]),
+    });
+    expect(second.meta.prior?.request.weather).toBeNull();
+    expect(second.meta.prior?.request.budget_max_inr).toBe(500);
+  });
+});
