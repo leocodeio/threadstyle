@@ -48,6 +48,8 @@ export const priorRequestSchema = z.object({
   request: parsedRequestSchema.shape.request,
   missing: z.array(missingFieldSchema).max(2),
   last_message: z.string().trim().max(MAX_REQUEST_CHARS).optional(),
+  language: parsedRequestSchema.shape.language.optional(),
+  offer: z.boolean().optional(),
 });
 
 export type PriorRequest = z.infer<typeof priorRequestSchema>;

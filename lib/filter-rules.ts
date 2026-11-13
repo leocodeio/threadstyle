@@ -179,16 +179,18 @@ export function diversify(
     (a, b) => score(b, need) - score(a, need) || a.price_inr - b.price_inr,
   );
 
-  if (need.categories.length <= 1) {
+  if (need.categories.length === 1) {
     return sorted.slice(0, MAX_CANDIDATES);
   }
 
+  // No category named: show the picker a spread of categories, not six tees.
+  const cap = need.categories.length === 0 ? 2 : 3;
   const counts = new Map<string, number>();
   const picked: CatalogueItem[] = [];
 
   for (const item of sorted) {
     const count = counts.get(item.category) ?? 0;
-    if (count >= 3) continue;
+    if (count >= cap) continue;
     picked.push(item);
     counts.set(item.category, count + 1);
     if (picked.length >= MAX_CANDIDATES) break;

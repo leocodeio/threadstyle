@@ -1,3 +1,4 @@
+import type { CatalogueItem } from "./catalogue";
 import { catalogue } from "./catalogue-data";
 import {
   PARSER_TIMEOUT_MS,
@@ -5,10 +6,16 @@ import {
   PICKER_TIMEOUT_MS,
   REQUEST_DEADLINE_MS,
 } from "./config";
-import { clarifyMessage, declineMessage, noMatchMessage } from "./copy";
+import {
+  audienceNote,
+  clarifyMessage,
+  declineMessage,
+  noMatchMessage,
+  otherStoreMessage,
+} from "./copy";
 import { filterCatalogue } from "./filter";
 import { chatCompletion, type ChatFn } from "./llm";
-import { mergePrior } from "./memory";
+import { isAffirmation, mergePrior, missingFor } from "./memory";
 import { parseRequest } from "./parse-request";
 import { pickItems } from "./pick";
 import type {
@@ -27,11 +34,32 @@ function newID(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
 }
 
-function priorState(parsed: ParsedRequest, message: string): PriorRequest {
+function priorState(
+  parsed: ParsedRequest,
+  message: string,
+  offer = false,
+): PriorRequest {
   return {
     request: parsed.request,
     missing: parsed.missing,
     last_message: message,
+    language: parsed.language,
+    ...(offer ? { offer: true } : {}),
+  };
+}
+
+function isOtherStore(brand: string | null): brand is string {
+  return brand !== null && !brand.toLowerCase().includes("bewakoof");
+}
+
+function fromOffer(prior: PriorRequest): ParsedRequest {
+  return {
+    intent: "recommend",
+    language: prior.language ?? "en",
+    references_prior: false,
+    missing: [],
+    decline_reason: null,
+    request: { ...prior.request, brand_other: null },
   };
 }
 
@@ -57,14 +85,49 @@ export async function recommend(
     prior,
   });
 
-  const parsed = await parseRequest(message, sessionId, chat, {
-    timeoutMs: Math.min(
-      PARSER_TIMEOUT_MS,
-      Math.max(1_000, deadline - Date.now()),
-    ),
-  });
-  const merged = mergePrior(parsed, options.prior ?? null, message);
+  const prior = options.prior ?? null;
+  const accepted =
+    prior !== null && prior.offer === true && isAffirmation(message);
+
+  const parsed = accepted
+    ? fromOffer(prior)
+    : await parseRequest(message, sessionId, chat, {
+        timeoutMs: Math.min(
+          PARSER_TIMEOUT_MS,
+          Math.max(1_000, deadline - Date.now()),
+        ),
+      });
+  const merged = accepted
+    ? { parsed, used_prior: true }
+    : mergePrior(parsed, prior, message);
   const effective = merged.parsed;
+
+  if (
+    effective.intent !== "decline" &&
+    isOtherStore(effective.request.brand_other)
+  ) {
+    const clean = { ...effective.request, brand_other: null };
+    const missing = missingFor(clean);
+    const offer = missing.length === 0;
+    return {
+      state: "no_match",
+      message: otherStoreMessage(
+        effective.request,
+        missing,
+        effective.language,
+      ),
+      items: [],
+      meta: meta(
+        0,
+        [],
+        priorState(
+          { ...effective, request: clean, missing },
+          message,
+          offer,
+        ),
+      ),
+    };
+  }
 
   if (effective.intent === "decline") {
     return {
@@ -147,14 +210,44 @@ export async function recommend(
     };
   }
 
+  const headline =
+    picked.message ||
+    (effective.language === "hinglish"
+      ? "Yeh pieces sabse close hain."
+      : "Here are the closest pieces.");
+  const note = audienceNoteFor(effective, picked.items);
+
   return {
     state: "recommend",
-    message:
-      picked.message ||
-      (effective.language === "hinglish"
-        ? "Yeh pieces sabse close hain."
-        : "Here are the closest pieces."),
+    message: note === null ? headline : `${headline} ${note}`,
     items: picked.items,
     meta: meta(filtered.total, filtered.relaxed, currentPrior),
   };
+}
+
+// When the student never said men's or women's, say which one is shown and
+// how to switch, but only if the other audience exists for these categories.
+function audienceNoteFor(
+  parsed: ParsedRequest,
+  items: readonly { readonly item: CatalogueItem }[],
+): string | null {
+  if (parsed.request.audience !== null || items.length === 0) return null;
+
+  const audiences = new Set(items.map((entry) => entry.item.audience));
+  const shown = [...audiences].filter(
+    (value): value is "men" | "women" => value === "men" || value === "women",
+  );
+  if (shown.length !== 1 || audiences.size !== 1) return null;
+
+  const only = shown[0];
+  if (only === undefined) return null;
+  const categories = new Set(items.map((entry) => entry.item.category));
+  const otherExists = catalogue.some(
+    (item) =>
+      categories.has(item.category) &&
+      item.audience !== only &&
+      item.audience !== "unisex",
+  );
+
+  return otherExists ? audienceNote(only, parsed.language) : null;
 }

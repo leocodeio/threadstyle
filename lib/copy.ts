@@ -130,3 +130,43 @@ export function noMatchMessage(
     ? "Is combination mein kuch nahi mila. Thoda simple try karo."
     : "Nothing matches that combination. Try fewer constraints.";
 }
+
+export function otherStoreMessage(
+  need: ParsedNeed,
+  missing: readonly MissingField[],
+  language: Language,
+): string {
+  const hinglish = language === "hinglish";
+  const brand = need.brand_other ?? "that store";
+  const category = categoryPhrase(need);
+
+  if (missing.length === 0) {
+    const budget = budgetLimit(need);
+    return hinglish
+      ? `Main sirf Bewakoof cover karta hoon, ${brand} nahi. Bewakoof ke ${category} ${budget} ke andar dekhne hain? "haan" bol do.`
+      : `I only cover Bewakoof, so I can't quote ${brand}. Want Bewakoof ${category} under ${budget} instead? Say "yes".`;
+  }
+
+  const ask = missing.includes("budget")
+    ? hinglish
+      ? "Budget bata do"
+      : "Tell me your budget"
+    : hinglish
+      ? "Bata do kya chahiye"
+      : "Tell me what you need";
+
+  return hinglish
+    ? `Main sirf Bewakoof cover karta hoon, ${brand} nahi. ${ask}, Bewakoof ke ${category} dikhaunga.`
+    : `I only cover Bewakoof, so I can't quote ${brand}. ${ask} and I'll show Bewakoof ${category}.`;
+}
+
+export function audienceNote(
+  shown: "men" | "women",
+  language: Language,
+): string {
+  const other = shown === "men" ? "women's" : "men's";
+  const label = shown === "men" ? "men's" : "women's";
+  return language === "hinglish"
+    ? `Abhi ${label} pieces dikha raha hoon — ${other} chahiye to bol do.`
+    : `Showing ${label} pieces — say "${other}" to switch.`;
+}
