@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
+import { AlertCircle } from "lucide-react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type StateBlockProps = {
   readonly label: string;
   readonly message: string;
   readonly tone?: "default" | "brick";
+  readonly icon?: ReactNode;
   readonly children?: ReactNode;
 };
 
@@ -11,20 +15,17 @@ export function StateBlock({
   label,
   message,
   tone = "default",
+  icon,
   children,
 }: StateBlockProps) {
   return (
-    <div className="border-t border-border pt-4">
-      <p
-        className={[
-          "text-[10.5px] font-semibold uppercase tracking-[0.12em]",
-          tone === "brick" ? "text-destructive" : "text-muted-foreground",
-        ].join(" ")}
-      >
-        {label}
-      </p>
-      <p className="mt-2 max-w-[60ch] text-[15px] leading-6">{message}</p>
-      {children ? <div className="mt-4">{children}</div> : null}
-    </div>
+    <Alert variant={tone === "brick" ? "destructive" : "default"}>
+      {icon ?? <AlertCircle className="size-4" aria-hidden="true" />}
+      <AlertTitle>{label}</AlertTitle>
+      <AlertDescription>
+        <p className="max-w-[60ch] text-[15px] leading-6">{message}</p>
+        {children ? <div className="mt-2">{children}</div> : null}
+      </AlertDescription>
+    </Alert>
   );
 }

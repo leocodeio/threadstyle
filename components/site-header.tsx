@@ -17,17 +17,12 @@ export function SiteHeader({ active }: SiteHeaderProps) {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between gap-4 px-5 py-4 sm:px-8">
-        <div className="flex items-baseline gap-4">
-          <Link
-            href="/"
-            className="font-heading text-[20px] font-semibold leading-none tracking-[-0.03em]"
-          >
-            Thread<span className="text-primary">.</span>
-          </Link>
-          <p className="hidden text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:block">
-            IIIT-H · Campus catalogue
-          </p>
-        </div>
+        <Link
+          href="/"
+          className="font-heading text-[20px] font-semibold leading-none tracking-[-0.03em]"
+        >
+          Thread<span className="text-primary">.</span>
+        </Link>
 
         <nav aria-label="Primary" className="flex items-center gap-5">
           <Link

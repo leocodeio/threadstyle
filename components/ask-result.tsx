@@ -1,22 +1,12 @@
 import type { RefObject } from "react";
+import { AlertCircle, Loader2, RotateCcw } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { RecommendResponse } from "@/lib/recommend-types";
 import { AskTurn } from "./ask-turn";
 import { StateBlock } from "./state-block";
-
-function TypingDots() {
-  return (
-    <span className="flex items-center gap-1" aria-hidden="true">
-      {[0, 1, 2].map((index) => (
-        <span
-          key={index}
-          className="typing-dot h-1 w-1 rounded-full bg-muted-foreground"
-          style={{ animationDelay: `${index * 120}ms` }}
-        />
-      ))}
-    </span>
-  );
-}
 
 type AskResultProps = {
   readonly loading: boolean;
@@ -47,27 +37,58 @@ export function AskResult({
       aria-busy={loading}
       className={[
         "outline-none",
-        compact ? "mt-4" : "mt-10 scroll-mt-6",
+        compact ? "mt-4" : "mt-8 scroll-mt-6",
       ].join(" ")}
     >
       {loading ? (
-        <div className="flex items-center gap-2.5 py-2">
-          <TypingDots />
-          <p className="text-[13px] leading-5 text-muted-foreground">
-            Looking through 300 pieces…
-          </p>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-[13px] leading-5 text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            <span>Looking through 300 pieces…</span>
+          </div>
+          {!compact ? (
+            <div className="flex flex-col gap-3">
+              {[0, 1].map((index) => (
+                <Card
+                  key={index}
+                  size="sm"
+                  className="rounded-[6px] border border-border bg-card py-4 ring-0"
+                >
+                  <CardContent className="flex flex-col gap-2.5 px-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <Skeleton className="h-5 w-2/3" />
+                      <Skeleton className="h-5 w-14" />
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-5 w-14" />
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       {!loading && error ? (
-        <StateBlock label="Something broke" message={error}>
-          <button
+        <StateBlock
+          label="Something broke"
+          message={error}
+          icon={<AlertCircle className="size-4" aria-hidden="true" />}
+        >
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onRetry}
-            className="h-9 rounded-[4px] border border-border bg-card px-3 text-[12px] font-medium transition-colors duration-150 hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="rounded-[4px]"
           >
+            <RotateCcw className="size-3.5" aria-hidden="true" />
             Try again
-          </button>
+          </Button>
         </StateBlock>
       ) : null}
 

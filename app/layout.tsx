@@ -39,7 +39,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${sans.variable} ${heading.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        {/* Frosted-glass viewport frame: left, right, bottom */}
+        <div aria-hidden="true" className="glass-frame">
+          <div className="glass-frame__rail glass-frame__rail--left" />
+          <div className="glass-frame__rail glass-frame__rail--right" />
+          <div className="glass-frame__rail glass-frame__rail--bottom" />
+        </div>
+      </body>
     </html>
   );
 }

@@ -6,13 +6,16 @@ import type {
   KeyboardEvent,
 } from "react";
 import { useEffect, useRef } from "react";
+import { SquarePen } from "lucide-react";
 
-import { useRecommendation } from "@/lib/use-recommendation";
 import { AskComposer } from "@/components/ask-composer";
 import { AskHero } from "@/components/ask-hero";
 import { AskHistory } from "@/components/ask-history";
 import { AskResult } from "@/components/ask-result";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { pastTurns } from "@/lib/turns";
+import { useRecommendation } from "@/lib/use-recommendation";
 
 export function Recommender() {
   const {
@@ -100,15 +103,29 @@ export function Recommender() {
         resultRef={resultRef}
         onRetry={retry}
       />
-      {hasPrior ? (
-        <div className="mb-2 flex justify-end">
-          <button
+      {hasPrior || turns.length > 0 ? (
+        <div className="mt-4 flex items-center justify-between gap-2">
+          {turns.length > 0 ? (
+            <Badge
+              variant="secondary"
+              className="h-5 rounded-[4px] px-1.5 font-mono text-[10px] tabular-nums text-muted-foreground"
+            >
+              {turns.length} {turns.length === 1 ? "turn" : "turns"}
+            </Badge>
+          ) : (
+            <span />
+          )}
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={reset}
-            className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label="New chat"
+            title="New chat"
+            className="text-muted-foreground hover:text-foreground"
           >
-            New chat
-          </button>
+            <SquarePen className="size-3.5" aria-hidden="true" />
+          </Button>
         </div>
       ) : null}
       <AskComposer

@@ -10,10 +10,11 @@ import {
   type CatalogueItem,
 } from "@/lib/catalogue";
 import { ProductCard } from "@/components/product-card";
+import { HeroStickers } from "@/components/hero-stickers";
 
 type SortKey = "featured" | "price-asc" | "price-desc" | "rating";
 
-const PAGE_SIZE = 48;
+const PAGE_SIZE = 60;
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -81,80 +82,83 @@ export function Marketplace({ items }: { items: CatalogueItem[] }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <main className="flex-1">
-        <section className="mx-auto w-full max-w-[720px] px-5 pb-8 pt-10 text-center sm:px-8 sm:pt-12">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Campus catalogue · {items.length} pieces
-          </p>
+        <div className="relative overflow-hidden">
+          <HeroStickers />
+          <section className="relative mx-auto w-full max-w-[720px] px-5 pb-8 pt-10 text-center sm:px-8 sm:pt-12">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Campus catalogue · {items.length} pieces
+            </p>
 
-          <h1 className="mt-4 font-heading text-[36px] font-semibold leading-[1.04] tracking-[-0.035em] text-balance sm:text-[48px]">
-            Wear something that fits the day.
-          </h1>
+            <h1 className="mt-4 font-heading text-[36px] font-semibold leading-[1.04] tracking-[-0.035em] text-balance sm:text-[48px]">
+              <span className="hero-highlight">Wear something that fits the day.</span>
+            </h1>
 
-          <p className="mx-auto mt-3 max-w-[50ch] text-[14px] leading-6 text-muted-foreground sm:text-[15px]">
-            Real Bewakoof pieces, real prices. Search by piece, colour, or
-            fabric.
-          </p>
+            <p className="mx-auto mt-3 max-w-[50ch] text-[14px] leading-6 text-muted-foreground sm:text-[15px]">
+              Real Bewakoof pieces, real prices. Search by piece, colour, or
+              fabric.
+            </p>
 
-          <div className="relative mx-auto mt-7 w-full max-w-[560px]">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground"
+            <div className="relative mx-auto mt-7 w-full max-w-[560px]">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground"
+              >
+                <circle cx="8.5" cy="8.5" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+                <path d="m12.5 12.5 3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+
+              <label htmlFor="catalogue-search" className="sr-only">
+                Search the catalogue
+              </label>
+              <input
+                id="catalogue-search"
+                type="search"
+                value={query}
+                onChange={(event) => changeQuery(event.target.value)}
+                placeholder="Search tees, colours, fabric…"
+                autoComplete="off"
+                className="h-14 w-full rounded-[6px] border border-border bg-card pl-12 pr-20 text-[15px] text-foreground shadow-none outline-none transition-colors duration-150 placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&::-webkit-search-cancel-button]:hidden"
+              />
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => changeQuery("")}
+                  className="absolute right-3 top-1/2 h-8 -translate-y-1/2 rounded-[4px] px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+
+            <div
+              className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
+              role="group"
+              aria-label="Filter by category"
             >
-              <circle cx="8.5" cy="8.5" r="5.25" stroke="currentColor" strokeWidth="1.5" />
-              <path d="m12.5 12.5 3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-
-            <label htmlFor="catalogue-search" className="sr-only">
-              Search the catalogue
-            </label>
-            <input
-              id="catalogue-search"
-              type="search"
-              value={query}
-              onChange={(event) => changeQuery(event.target.value)}
-              placeholder="Search tees, colours, fabric…"
-              autoComplete="off"
-              className="h-14 w-full rounded-[6px] border border-border bg-card pl-12 pr-20 text-[15px] text-foreground shadow-none outline-none transition-colors duration-150 placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&::-webkit-search-cancel-button]:hidden"
-            />
-            {query ? (
               <button
                 type="button"
-                onClick={() => changeQuery("")}
-                className="absolute right-3 top-1/2 h-8 -translate-y-1/2 rounded-[4px] px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                onClick={() => changeCategory("all")}
+                aria-pressed={category === "all"}
+                className={`${chipClass(category === "all")} shrink-0`}
               >
-                Clear
+                All
               </button>
-            ) : null}
-          </div>
-
-          <div
-            className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
-            role="group"
-            aria-label="Filter by category"
-          >
-            <button
-              type="button"
-              onClick={() => changeCategory("all")}
-              aria-pressed={category === "all"}
-              className={`${chipClass(category === "all")} shrink-0`}
-            >
-              All
-            </button>
-            {CATEGORIES.map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => changeCategory(value)}
-                aria-pressed={category === value}
-                className={`${chipClass(category === value)} shrink-0`}
-              >
-                {CATEGORY_LABELS[value]}
-              </button>
-            ))}
-          </div>
-        </section>
+              {CATEGORIES.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => changeCategory(value)}
+                  aria-pressed={category === value}
+                  className={`${chipClass(category === value)} shrink-0`}
+                >
+                  {CATEGORY_LABELS[value]}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section className="mx-auto w-full max-w-[1180px] px-5 pb-16 sm:px-8">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
@@ -182,9 +186,9 @@ export function Marketplace({ items }: { items: CatalogueItem[] }) {
           </div>
 
           {shown.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-9 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-9 lg:grid-cols-4 xl:grid-cols-5">
               {shown.map((item, index) => (
-                <ProductCard key={item.item_id} item={item} priority={index < 4} />
+                <ProductCard key={item.item_id} item={item} priority={index < 5} />
               ))}
             </div>
           ) : (
@@ -247,7 +251,7 @@ function chipClass(active: boolean): string {
     "h-8 rounded-[4px] border px-3 text-[12px] font-medium transition-colors duration-150",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     active
-      ? "border-primary bg-primary text-primary-foreground"
+      ? "border-foreground bg-secondary text-foreground"
       : "border-border bg-card text-foreground hover:border-foreground",
   ].join(" ");
 }

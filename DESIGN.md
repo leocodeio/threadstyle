@@ -21,7 +21,7 @@ plain language, and the reasoning pinned next to the pick.
 ## Principles
 
 1. The pick is the hero. Name, price, and why sit together; nothing competes.
-2. One accent per screen. Marigold marks action and the top pick. Nothing else.
+2. One accent per screen. Marigold marks action, the top pick, and the shop hero highlight. Nothing else.
 3. Show the trade-off. If an item is great but not warm, say so in the card.
 4. No invented confidence. Unknowns are stated, not styled away.
 5. Fast reads. Left-aligned, short lines, tabular numbers, no centred paragraphs.
@@ -36,6 +36,7 @@ Light theme. Values are `oklch`; tokens are the only colours components may use.
 | Ink | `--foreground` | `oklch(0.215 0.012 70)` | Body text, borders on emphasis |
 | Card | `--card` | `oklch(0.995 0.004 85)` | Recommendation cards, composer |
 | Marigold | `--primary` | `oklch(0.72 0.165 68)` | Top pick, focus ring, send button |
+| Marker | `--hero-marker` | `oklch(0.72 0.165 68 / 40%)` | Highlighter wash behind the shop H1 |
 | Ink on Marigold | `--primary-foreground` | `oklch(0.205 0.020 65)` | Text on primary only |
 | Sand | `--secondary` | `oklch(0.940 0.014 85)` | Chips, quiet buttons |
 | Moss wash | `--accent` | `oklch(0.930 0.035 155)` | Trade-off note background |
@@ -72,6 +73,14 @@ Two text families plus one data mono. No third.
 - Radius: `--radius: 6px` for cards, inputs, buttons. Badges 4px. No pills except status dots.
 - Shadows: none by default. `shadow-stamp` (`2px 2px 0` Ink) on the top-pick card only.
 - Borders carry structure, not shadows. 1px Rule; 3px Marigold left rule on the top pick.
+- Viewport frame: an 8px (12px from `sm`) frosted glass rail on the left, right,
+  and bottom screen edges. Translucent ink tint that clears through a faint
+  specular haze, ink hairlines on both rims (never an opaque white bevel), a
+  soft inward falloff, and `backdrop-filter` blur over whatever scrolls
+  beneath. It is chrome: no content, no interaction.
+- Hero stickers: die-cut apparel illustrations may sit in the shop hero's outer
+  margins from `lg` up, behind content. They use `--card` rims, the
+  `--sticker-shadow` lift, and a −8° to +9° tilt. Decorative only.
 - Vertical rhythm inside a card: label → name+price → why → trade-off, 8px apart.
 
 ## Components
@@ -81,7 +90,9 @@ Two text families plus one data mono. No third.
 Eyebrow, H1, short subcopy, search and category chips are centred; this is
 the only centred text block in the product. Search is 56px tall, `--card`,
 1px Rule, 6px radius, 560px max, icon left, `Clear` right, Marigold focus ring.
-Category chips are 32px, 4px radius, Sand by default and Marigold when active.
+Category chips are 32px, 4px radius, Card with a Rule border by default, and
+Sand with an Ink border when active. Marigold stays reserved for actions and
+the top pick.
 
 **Ask page** — 720px content column (768px including 24px gutters), 32px top.
 Eyebrow, H1 32/36,
@@ -93,10 +104,11 @@ no-match, and error use the state block.
 
 **Shop chat** — a floating `Ask the stylist` button at the bottom-right of the
 shop: 44px, 6px radius, Marigold, 20px from the edges. It opens a 420px panel
-(max 75vh) above the button, `--card`, 1px Rule, no backdrop and no shadow.
-The header is `Thread stylist` + `Close`; the body shows the request bubble, a
-compact result, and three examples when empty. The compact composer uses 9px
-controls. Same rules and cards as the Ask page.
+(max 75vh) above the button, `--card`, 1px Rule, no shadow. While open, a light
+paper veil and 2px backdrop blur sit behind it; clicking the veil or pressing
+`Esc` closes the panel. The header is `Thread stylist` + `Close`; the body shows
+the request bubble, a compact result, and three examples when empty. The compact
+composer uses 9px controls. Same rules and cards as the Ask page.
 
 **Explainer** — `How it works` uses the 720px content column. One marigold
 left rule on the short-version card; vertical numbered steps, a two-column
@@ -106,9 +118,9 @@ new colour.
 **Product card** — `--card`, 1px Rule, 6px radius, 4:5 image on Sand, 12px
 padding. Category label + rating row, name 13/18 medium clamped to two lines,
 `colour · fabric` 11/16 muted, price 14 mono semibold, MRP strike 11, discount
-10. Grid is 4 columns at `lg`, 3 at `sm`, 2 on phones; 48 cards, then `Load
-more`. Hover: border Ink and `translateY(-4px)`, 150ms. No shadow, no image
-zoom. Every card opens the real Bewakoof page in a new tab.
+10. Grid is 5 columns at `xl`, 4 at `lg`, 3 at `sm`, 2 on phones; 60 cards, then
+`Load more`. Hover: border Ink and `translateY(-4px)`, 150ms. No shadow, no
+image zoom. Every card opens the real Bewakoof page in a new tab.
 
 **Recommendation card** — `--card` surface, 1px Rule, 6px radius, 16px padding.
 Top pick adds a 3px Marigold left rule and a `TOP PICK` label. Name 17/24 600;
@@ -126,6 +138,17 @@ one short paragraph. Brick label only for decline.
 
 **Catalogue chip** — Sand background, 4px radius, 13px text. Category, colour,
 or tag. Max three per card; drop the least useful.
+
+**Hero stickers** — four die-cut apparel illustrations (tee, hoodie, cap, tote)
+sit in the shop hero's outer margins, behind the text, from `lg` up. Soft clay
+shading, `--card` die-cut rim, `--sticker-shadow` lift, −8° to +9° tilt. Palette
+is Marigold, Moss wash, Sand, and Card only. Hidden when margins vanish. They
+are decoration: `aria-hidden`, no pointer events, no motion.
+
+**Hero highlight** — a hand-drawn Marigold marker swipe sits behind
+every line of the shop H1. Each wrapped line gets its own swipe, covering the
+full cap-height and descenders, with blunt ends that overhang the line. Ink
+stays on top. Never highlight body copy.
 
 **Empty state** — four example prompts as text buttons, left-aligned, 1px Rule,
 no icons.
@@ -147,7 +170,8 @@ no icons.
 
 ## Don'ts
 
-- No gradients, glass, blur, glow, or "AI" purple.
+- No gradients, blur, or glow on content surfaces; only the viewport frame and
+  hero stickers carry dimensional shading. No "AI" purple.
 - No emoji in UI chrome.
 - No body-shape, attractiveness, or "look slim" language.
 - No countdowns, stock scarcity, or fake urgency.

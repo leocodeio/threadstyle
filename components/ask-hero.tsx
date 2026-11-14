@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight, Shirt } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const EXAMPLES = [
   "Smart shirt for a presentation tomorrow, under ₹1,500",
@@ -16,9 +20,13 @@ export function AskHero({ showExamples, onExample }: AskHeroProps) {
   return (
     <>
       <section className="pt-8">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <Badge
+          variant="secondary"
+          className="h-6 gap-1.5 rounded-[4px] px-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+        >
+          <Shirt className="size-3" aria-hidden="true" />
           Campus stylist · 300 real pieces
-        </p>
+        </Badge>
 
         <h1 className="mt-4 max-w-[22ch] font-heading text-[32px] font-semibold leading-[36px] tracking-[-0.035em] text-balance">
           Tell me the day. I&apos;ll find the fit.
@@ -37,25 +45,30 @@ export function AskHero({ showExamples, onExample }: AskHeroProps) {
           </p>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {EXAMPLES.map((example) => (
-              <button
+              <Button
                 key={example}
                 type="button"
+                variant="outline"
                 onClick={() => onExample(example)}
-                className="rounded-[4px] border border-border bg-card px-3 py-2.5 text-left text-[13px] leading-5 transition-colors duration-150 hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="h-auto justify-between gap-2 rounded-[6px] border-border bg-card px-3.5 py-2.5 text-left text-[13px] font-normal leading-5 whitespace-normal hover:border-foreground hover:bg-card"
               >
-                {example}
-              </button>
+                <span>{example}</span>
+                <ArrowUpRight
+                  className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </Button>
             ))}
           </div>
-          <p className="mt-4 text-[12px] leading-5 text-muted-foreground">
+          <p className="mt-4 inline-flex items-center gap-1.5 text-[12px] leading-5 text-muted-foreground">
             Prefer to browse?{" "}
             <Link
               href="/"
-              className="font-medium text-foreground underline underline-offset-4"
+              className="inline-flex items-center gap-1 font-medium text-foreground underline underline-offset-4 hover:text-primary"
             >
               See all 300 pieces
+              <ArrowRight className="size-3" aria-hidden="true" />
             </Link>
-            .
           </p>
         </div>
       ) : null}

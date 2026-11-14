@@ -76,6 +76,14 @@
   --chart-5: oklch(0.89 0.012 80);
   --radius: 0.375rem;
   --shadow-stamp: 2px 2px 0 0 oklch(0.215 0.012 70);
+  /* Frosted viewport frame. See "Viewport frame" in DESIGN.md. */
+  --glass-tint: oklch(0.215 0.012 70 / 7%);
+  --glass-sheen: oklch(1 0 0 / 26%);
+  --glass-edge: oklch(0.215 0.012 70 / 14%);
+  --glass-glow: oklch(0.215 0.012 70 / 10%);
+  /* Hero sticker lift. See "Hero stickers" in DESIGN.md. */
+  --sticker-shadow: oklch(0.215 0.012 70 / 18%);
+  --hero-marker: oklch(0.72 0.165 68 / 40%);
   --sidebar: oklch(0.995 0.004 85);
   --sidebar-foreground: oklch(0.215 0.012 70);
   --sidebar-primary: oklch(0.72 0.165 68);
@@ -111,6 +119,12 @@
   --chart-4: oklch(0.96 0.008 85);
   --chart-5: oklch(0.28 0.012 70);
   --shadow-stamp: 2px 2px 0 0 oklch(0 0 0 / 60%);
+  --glass-tint: oklch(1 0 0 / 6%);
+  --glass-sheen: oklch(1 0 0 / 14%);
+  --glass-edge: oklch(0 0 0 / 42%);
+  --glass-glow: oklch(0 0 0 / 40%);
+  --sticker-shadow: oklch(0 0 0 / 55%);
+  --hero-marker: oklch(0.78 0.15 70 / 42%);
   --sidebar: oklch(0.235 0.012 70);
   --sidebar-foreground: oklch(0.96 0.008 85);
   --sidebar-primary: oklch(0.78 0.15 70);
@@ -133,6 +147,11 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01" on;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 
   h1,
@@ -161,6 +180,108 @@
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* Frosted-glass viewport frame: left, right, and bottom edges.
+   Decorative chrome only — never interactive, never wraps content. */
+.glass-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.glass-frame__rail {
+  position: absolute;
+  overflow: hidden;
+  /* Tinted at the screen edge, softening into a faint specular haze inward. */
+  background-image: linear-gradient(
+    var(--glass-direction, 90deg),
+    var(--glass-tint) 0%,
+    var(--glass-tint) 55%,
+    var(--glass-sheen) 100%
+  );
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+}
+
+.glass-frame__rail--left,
+.glass-frame__rail--right {
+  top: 0;
+  bottom: 0;
+  width: 8px;
+}
+
+.glass-frame__rail--left {
+  left: 0;
+  --glass-direction: 90deg;
+  box-shadow:
+    inset 1px 0 0 var(--glass-edge),
+    inset -1px 0 0 var(--glass-sheen),
+    4px 0 18px -12px var(--glass-glow);
+}
+
+.glass-frame__rail--right {
+  right: 0;
+  --glass-direction: 270deg;
+  box-shadow:
+    inset -1px 0 0 var(--glass-edge),
+    inset 1px 0 0 var(--glass-sheen),
+    -4px 0 18px -12px var(--glass-glow);
+}
+
+.glass-frame__rail--bottom {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 8px;
+  --glass-direction: 0deg;
+  box-shadow:
+    inset 0 -1px 0 var(--glass-edge),
+    inset 0 1px 0 var(--glass-sheen),
+    0 -4px 18px -12px var(--glass-glow);
+}
+
+@media (min-width: 40rem) {
+  .glass-frame__rail--left,
+  .glass-frame__rail--right {
+    width: 12px;
+  }
+
+  .glass-frame__rail--bottom {
+    height: 12px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-frame__rail {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Die-cut apparel stickers in the shop hero. */
+.hero-sticker {
+  filter: drop-shadow(0 10px 16px var(--sticker-shadow));
+}
+
+/* Hand-drawn marigold swipe behind the shop H1. The inline background is
+   cloned per wrapped line so the whole title is marked. The swipe has blunt
+   ends and covers the full glyph height. The data URI mirrors --hero-marker
+   in sRGB. See "Hero highlight" in DESIGN.md. */
+.hero-highlight {
+  padding-inline: 0.09em;
+  margin-inline: -0.09em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 22' preserveAspectRatio='none'%3E%3Cpath d='M0 4C18 3.2 36 4.2 54 3.4C72 2.8 96 3.8 120 3.2V20.8C100 21.2 80 20.2 60 20.8C40 21.4 18 20.6 0 20.4Z' fill='%23e68c00' fill-opacity='0.4'/%3E%3Cpath d='M2 20.3C24 21 48 20.4 72 20.6C92 20.8 108 21 118 20.7' fill='none' stroke='%23e68c00' stroke-opacity='0.4' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 1.15em;
+  background-position: 0 0.04em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.dark .hero-highlight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 22' preserveAspectRatio='none'%3E%3Cpath d='M0 4C18 3.2 36 4.2 54 3.4C72 2.8 96 3.8 120 3.2V20.8C100 21.2 80 20.2 60 20.8C40 21.4 18 20.6 0 20.4Z' fill='%23f3a437' fill-opacity='0.42'/%3E%3Cpath d='M2 20.3C24 21 48 20.4 72 20.6C92 20.8 108 21 118 20.7' fill='none' stroke='%23f3a437' stroke-opacity='0.42' stroke-width='1.2'/%3E%3C/svg%3E");
 }
 
 @keyframes typing-pulse {
